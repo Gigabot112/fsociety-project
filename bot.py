@@ -1,13 +1,8 @@
 import os
-from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-TOKEN = os.getenv("BOT_TOKEN") 
-
-app = Flask(__name__)
-
-telegram_app = Application.builder().token(TOKEN).build()
+TOKEN = os.getenv("BOT_TOKEN")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -17,32 +12,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-telegram_app.add_handler(CommandHandler("start", start))
+def main():
+    if not TOKEN:
+        raise RuntimeError("BOT_TOKEN не найден")
 
+    app = Application.builder().token(TOKEN).build()
 
-@app.get("/")
-def home():
-    return "FSociety Bot is running!"
+    app.add_handler(CommandHandler("start", start))
 
-
-@app.post("/webhook")
-async def webhook():
-    data = request.get_json(force=True)
-    update = Update.de_json(data, telegram_app.bot)
-
-    await telegram_app.process_update(update)
-
-    return "OK"
+    print("Бот запущен!")
+    app.run_polling()
 
 
 if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        await telegram_app.initialize()
-        await telegram_app.start()
-
-        port = int(os.getenv("PORT", 8080))
-        app.run(host="0.0.0.0", port=port)
-
-    asyncio.run(main())
+    main()
