@@ -17,116 +17,133 @@ from telegram.ext import (
     filters,
 )
 
+
+# =========================================================
+# НАСТРОЙКИ
+# =========================================================
+
 TOKEN = os.getenv("BOT_TOKEN")
 
-# Аккаунт, который получает заявки
+# Telegram ID аккаунта администратора,
+# который получает заявки
 ADMIN_CHAT_ID = 8945804459
 
 # Username администратора
 ADMIN_USERNAME = "@mvcl12"
 
 
-# Временное хранилище заявок
-pending_reports = {}
-
-
-# =========================
+# =========================================================
 # ГЛАВНОЕ МЕНЮ
-# =========================
+# =========================================================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()
-
-    keyboard = [
+def main_menu():
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
                 "📩 Подать жалобу",
-                callback_data="report",
+                callback_data="report"
             )
         ],
         [
             InlineKeyboardButton(
                 "👑 VIP",
-                callback_data="vip",
+                callback_data="vip"
             )
         ],
         [
             InlineKeyboardButton(
                 "👤 Связаться с админом",
-                callback_data="admin",
+                callback_data="admin"
             )
         ],
-    ]
+    ])
+
+
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    context.user_data.clear()
 
     await update.message.reply_text(
         "👋 Добро пожаловать!\n\n"
         "Выберите нужный раздел:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
+        reply_markup=main_menu()
     )
 
 
-# =========================
-# КНОПКИ
-# =========================
+# =========================================================
+# МЕНЮ ЖАЛОБ
+# =========================================================
 
-async def button_handler(
+def report_menu():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🆓 Бесплатная жалоба",
+                callback_data="free"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "👑 VIP — 25 ⭐",
+                callback_data="vip_25"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "💎 VIP Gold — 50 ⭐",
+                callback_data="vip_50"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🔙 Назад",
+                callback_data="back"
+            )
+        ],
+    ])
+
+
+async def show_report_menu(
+    query
+):
+    await query.edit_message_text(
+        "📩 Подать жалобу\n\n"
+
+        "🆓 Бесплатная\n"
+        "Обработка в течение 1 дня.\n\n"
+
+        "👑 VIP — 25 ⭐\n"
+        "Обработка примерно за 1 час.\n\n"
+
+        "💎 VIP Gold — 50 ⭐\n"
+        "Обработка примерно за 10–20 минут.\n\n"
+
+        "Выберите вариант:",
+        reply_markup=report_menu()
+    )
+
+
+# =========================================================
+# ОБЩИЕ КНОПКИ ПОЛЬЗОВАТЕЛЯ
+# =========================================================
+
+async def user_buttons(
     update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
+    context: ContextTypes.DEFAULT_TYPE
 ):
     query = update.callback_query
-    await query.answer()
-
     data = query.data
+
+    await query.answer()
 
     # -------------------------
     # Подать жалобу
     # -------------------------
 
     if data == "report":
-
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "🆓 Бесплатная жалоба",
-                    callback_data="free",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "👑 VIP — 25 ⭐",
-                    callback_data="vip_25",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "💎 VIP Gold — 50 ⭐",
-                    callback_data="vip_50",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔙 Назад",
-                    callback_data="back",
-                )
-            ],
-        ]
-
-        await query.edit_message_text(
-            "📩 Подать жалобу\n\n"
-
-            "🆓 Бесплатная\n"
-            "Обработка в течение 1 дня.\n\n"
-
-            "👑 VIP — 25 ⭐\n"
-            "Приоритетная обработка примерно за 1 час.\n\n"
-
-            "💎 VIP Gold — 50 ⭐\n"
-            "Приоритетная обработка примерно за 10–20 минут.\n\n"
-
-            "Выберите вариант:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-
+        await show_report_menu(query)
         return
 
     # -------------------------
@@ -135,26 +152,26 @@ async def button_handler(
 
     if data == "vip":
 
-        keyboard = [
+        keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
                     "👑 VIP — 25 ⭐",
-                    callback_data="vip_25",
+                    callback_data="vip_25"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "💎 VIP Gold — 50 ⭐",
-                    callback_data="vip_50",
+                    callback_data="vip_50"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🔙 Назад",
-                    callback_data="back",
+                    callback_data="back"
                 )
             ],
-        ]
+        ])
 
         await query.edit_message_text(
             "👑 VIP\n\n"
@@ -164,38 +181,36 @@ async def button_handler(
 
             "💎 VIP Gold — 50 ⭐\n"
             "Обработка примерно за 10–20 минут.",
-            
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            reply_markup=keyboard
         )
 
         return
 
     # -------------------------
-    # Администратор
+    # Связь с админом
     # -------------------------
 
     if data == "admin":
 
-        keyboard = [
+        keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
                     "👤 Открыть профиль админа",
-                    url="https://t.me/mvcl12",
+                    url="https://t.me/mvcl12"
                 )
             ],
             [
                 InlineKeyboardButton(
                     "🔙 Назад",
-                    callback_data="back",
+                    callback_data="back"
                 )
             ],
-        ]
+        ])
 
         await query.edit_message_text(
             f"👤 Администратор: {ADMIN_USERNAME}\n\n"
-            "Вы можете самостоятельно открыть профиль "
-            "администратора.",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "Вы можете открыть профиль администратора.",
+            reply_markup=keyboard
         )
 
         return
@@ -206,51 +221,37 @@ async def button_handler(
 
     if data == "back":
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "📩 Подать жалобу",
-                    callback_data="report",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "👑 VIP",
-                    callback_data="vip",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "👤 Связаться с админом",
-                    callback_data="admin",
-                )
-            ],
-        ]
-
         await query.edit_message_text(
             "👋 Главное меню:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            reply_markup=main_menu()
         )
 
         return
 
     # -------------------------
-    # Выбор типа заявки
+    # Бесплатная / VIP
     # -------------------------
 
-    if data in ("free", "vip_25", "vip_50"):
+    if data in (
+        "free",
+        "vip_25",
+        "vip_50"
+    ):
 
         if data == "free":
+
             report_type = "🆓 Бесплатная"
             processing_time = "в течение 1 дня"
             price = 0
 
         elif data == "vip_25":
+
             report_type = "👑 VIP"
             processing_time = "примерно за 1 час"
             price = 25
 
         else:
+
             report_type = "💎 VIP Gold"
             processing_time = "примерно за 10–20 минут"
             price = 50
@@ -266,149 +267,41 @@ async def button_handler(
             f"{report_type}\n\n"
 
             "Шаг 1 из 3.\n"
-            "Отправьте username или ссылку на аккаунт, "
-            "на который подаётся жалоба."
+            "Отправьте username или ссылку на аккаунт."
         )
 
         return
 
-    # =========================
-    # АДМИН: ПРИНЯТЬ ЗАЯВКУ
-    # =========================
 
-    if data.startswith("accept:"):
-
-        # Проверяем, что кнопку нажимает именно админ
-        if query.from_user.id != ADMIN_CHAT_ID:
-            await query.answer(
-                "⛔ У вас нет доступа.",
-                show_alert=True,
-            )
-            return
-
-        report_id = data.split(":", 1)[1]
-
-        report = pending_reports.get(report_id)
-
-        if not report:
-            await query.answer(
-                "Заявка уже обработана или не найдена.",
-                show_alert=True,
-            )
-            return
-
-        report["status"] = "accepted"
-
-        # Меняем сообщение у администратора
-        await query.edit_message_text(
-            "✅ ЗАЯВКА ПРИНЯТА\n\n"
-
-            f"ID заявки: {report_id}\n"
-            f"Тип: {report['report_type']}\n"
-            f"Цель: {report['target']}\n\n"
-
-            "Заявка принята к рассмотрению.\n"
-            "Данные и доказательства доступны выше."
-        )
-
-        # Сообщаем пользователю
-        try:
-            await context.bot.send_message(
-                chat_id=report["user_id"],
-                text=(
-                    "✅ Ваша заявка принята к рассмотрению.\n\n"
-                    f"Тип: {report['report_type']}\n"
-                    f"Срок обработки: {report['processing_time']}\n\n"
-                    "Модератор получил вашу заявку и "
-                    "предоставленные доказательства."
-                ),
-            )
-
-        except Exception:
-            pass
-
-        return
-
-    # =========================
-    # АДМИН: ОТКЛОНИТЬ ЗАЯВКУ
-    # =========================
-
-    if data.startswith("reject:"):
-
-        # Проверяем администратора
-        if query.from_user.id != ADMIN_CHAT_ID:
-            await query.answer(
-                "⛔ У вас нет доступа.",
-                show_alert=True,
-            )
-            return
-
-        report_id = data.split(":", 1)[1]
-
-        report = pending_reports.get(report_id)
-
-        if not report:
-            await query.answer(
-                "Заявка уже обработана или не найдена.",
-                show_alert=True,
-            )
-            return
-
-        report["status"] = "rejected"
-
-        await query.edit_message_text(
-            "❌ ЗАЯВКА ОТКЛОНЕНА\n\n"
-
-            f"ID заявки: {report_id}\n"
-            f"Тип: {report['report_type']}\n"
-            f"Цель: {report['target']}"
-        )
-
-        # Сообщаем пользователю
-        try:
-            await context.bot.send_message(
-                chat_id=report["user_id"],
-                text=(
-                    "❌ Ваша заявка была отклонена "
-                    "модератором.\n\n"
-                    "Если вы считаете, что это произошло "
-                    "по ошибке, вы можете обратиться к администратору."
-                ),
-            )
-
-        except Exception:
-            pass
-
-        return
-
-
-# =========================
-# ПОЛУЧЕНИЕ ДАННЫХ ЗАЯВКИ
-# =========================
+# =========================================================
+# ОБРАБОТКА ЗАЯВКИ ОТ ПОЛЬЗОВАТЕЛЯ
+# =========================================================
 
 async def message_handler(
     update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
+    context: ContextTypes.DEFAULT_TYPE
 ):
 
-    message = update.message
+    if not update.message:
+        return
 
+    message = update.message
     step = context.user_data.get("step")
 
-    # -------------------------
-    # Шаг 1 — цель
-    # -------------------------
+    # =====================================================
+    # ШАГ 1 — ЦЕЛЬ
+    # =====================================================
 
     if step == "target":
 
         if not message.text:
+
             await message.reply_text(
                 "Пожалуйста, отправьте username или ссылку текстом."
             )
             return
 
         context.user_data["target"] = message.text.strip()
-
         context.user_data["step"] = "reason"
 
         await message.reply_text(
@@ -418,20 +311,20 @@ async def message_handler(
 
         return
 
-    # -------------------------
-    # Шаг 2 — причина
-    # -------------------------
+    # =====================================================
+    # ШАГ 2 — ПРИЧИНА
+    # =====================================================
 
     if step == "reason":
 
         if not message.text:
+
             await message.reply_text(
                 "Пожалуйста, напишите причину текстом."
             )
             return
 
         context.user_data["reason"] = message.text.strip()
-
         context.user_data["step"] = "evidence"
 
         await message.reply_text(
@@ -442,9 +335,9 @@ async def message_handler(
 
         return
 
-    # -------------------------
-    # Шаг 3 — доказательства
-    # -------------------------
+    # =====================================================
+    # ШАГ 3 — ДОКАЗАТЕЛЬСТВА
+    # =====================================================
 
     if step == "evidence":
 
@@ -466,28 +359,27 @@ async def message_handler(
 
         elif message.text:
 
-            context.user_data["evidence"] = (
-                message.text
-            )
-
+            context.user_data["evidence"] = message.text
             context.user_data["evidence_type"] = "text"
 
         else:
 
             await message.reply_text(
-                "Пожалуйста, отправьте текст, фотографию или документ."
+                "Отправьте текст, фотографию или документ."
             )
-
             return
 
         price = context.user_data.get("price", 0)
 
-        # Бесплатная заявка
+        # -------------------------------------------------
+        # БЕСПЛАТНАЯ ЗАЯВКА
+        # -------------------------------------------------
+
         if price == 0:
 
             await create_report(
                 update,
-                context,
+                context
             )
 
             await message.reply_text(
@@ -500,7 +392,10 @@ async def message_handler(
 
             return
 
-        # Платная заявка
+        # -------------------------------------------------
+        # VIP
+        # -------------------------------------------------
+
         if price == 25:
 
             title = "VIP — жалоба"
@@ -513,8 +408,7 @@ async def message_handler(
 
         await message.reply_text(
             f"📋 Данные заявки получены.\n\n"
-            f"Теперь оплатите {price} ⭐ "
-            "для отправки заявки."
+            f"Теперь оплатите {price} ⭐."
         )
 
         await context.bot.send_invoice(
@@ -527,23 +421,21 @@ async def message_handler(
             prices=[
                 LabeledPrice(
                     title,
-                    price,
+                    price
                 )
             ],
         )
 
         context.user_data["step"] = "payment"
 
-        return
 
-
-# =========================
+# =========================================================
 # СОЗДАНИЕ ЗАЯВКИ
-# =========================
+# =========================================================
 
 async def create_report(
     update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
+    context: ContextTypes.DEFAULT_TYPE
 ):
 
     user = update.effective_user
@@ -558,59 +450,70 @@ async def create_report(
 
     report = {
         "id": report_id,
+
         "user_id": user.id,
+
         "username": username,
 
         "report_type": context.user_data.get(
             "report_type",
-            "Неизвестно",
+            "Неизвестно"
         ),
 
         "processing_time": context.user_data.get(
             "processing_time",
-            "Не указан",
+            "Не указан"
         ),
 
         "target": context.user_data.get(
             "target",
-            "Не указана",
+            "Не указана"
         ),
 
         "reason": context.user_data.get(
             "reason",
-            "Не указана",
+            "Не указана"
         ),
 
         "evidence": context.user_data.get(
             "evidence",
-            "Нет",
+            "Нет"
         ),
 
         "evidence_type": context.user_data.get(
             "evidence_type",
-            "text",
+            "text"
         ),
 
         "status": "pending",
     }
 
-    pending_reports[report_id] = report
+    # Сохраняем заявку внутри приложения
+    reports = context.application.bot_data.setdefault(
+        "reports",
+        {}
+    )
 
-    # Кнопки администратора
-    keyboard = [
+    reports[report_id] = report
+
+    # =====================================================
+    # ВОТ ЭТИ КНОПКИ ПОЛУЧИТ АДМИН
+    # =====================================================
+
+    admin_keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "✅ Принять заявку",
-                callback_data=f"accept:{report_id}",
+                "✅ ПРИНЯТЬ ЗАЯВКУ",
+                callback_data=f"ADMIN_ACCEPT:{report_id}"
             )
         ],
         [
             InlineKeyboardButton(
-                "❌ Отклонить заявку",
-                callback_data=f"reject:{report_id}",
+                "❌ ОТКЛОНИТЬ ЗАЯВКУ",
+                callback_data=f"ADMIN_REJECT:{report_id}"
             )
         ],
-    ]
+    ])
 
     admin_text = (
         "📥 НОВАЯ ЗАЯВКА\n\n"
@@ -630,24 +533,31 @@ async def create_report(
         f"{report['reason']}\n\n"
 
         "📎 Доказательства:\n"
-        "См. вложение ниже.\n\n"
+        "Вложение отправлено следующим сообщением.\n\n"
 
-        "⏳ Статус: ожидает решения модератора."
+        "⏳ Статус: ожидает решения."
     )
 
+    # Отправляем ГЛАВНОЕ сообщение с кнопками
     await context.bot.send_message(
         chat_id=ADMIN_CHAT_ID,
         text=admin_text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
+        reply_markup=admin_keyboard
     )
 
-    # Отправляем доказательства
+    # =====================================================
+    # ОТПРАВЛЯЕМ ДОКАЗАТЕЛЬСТВА
+    # =====================================================
+
     if report["evidence_type"] == "photo":
 
         await context.bot.send_photo(
             chat_id=ADMIN_CHAT_ID,
             photo=report["evidence"],
-            caption=f"📎 Доказательство заявки {report_id}",
+            caption=(
+                f"📎 Доказательство заявки "
+                f"{report_id}"
+            )
         )
 
     elif report["evidence_type"] == "document":
@@ -655,7 +565,10 @@ async def create_report(
         await context.bot.send_document(
             chat_id=ADMIN_CHAT_ID,
             document=report["evidence"],
-            caption=f"📎 Доказательство заявки {report_id}",
+            caption=(
+                f"📎 Доказательство заявки "
+                f"{report_id}"
+            )
         )
 
     else:
@@ -663,19 +576,170 @@ async def create_report(
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=(
-                f"📎 Доказательство заявки {report_id}:\n\n"
+                f"📎 Доказательство заявки "
+                f"{report_id}:\n\n"
                 f"{report['evidence']}"
-            ),
+            )
         )
 
 
-# =========================
+# =========================================================
+# АДМИН — ПРИНЯТЬ ЗАЯВКУ
+# =========================================================
+
+async def admin_accept(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    query = update.callback_query
+
+    # Проверяем администратора
+    if query.from_user.id != ADMIN_CHAT_ID:
+
+        await query.answer(
+            "⛔ У вас нет доступа.",
+            show_alert=True
+        )
+
+        return
+
+    await query.answer("Заявка принята.")
+
+    report_id = query.data.split(":", 1)[1]
+
+    reports = context.application.bot_data.get(
+        "reports",
+        {}
+    )
+
+    report = reports.get(report_id)
+
+    if not report:
+
+        await query.edit_message_text(
+            "⚠️ Заявка не найдена.\n\n"
+            "Возможно, бот был перезапущен."
+        )
+
+        return
+
+    report["status"] = "accepted"
+
+    # Меняем кнопки/сообщение
+    await query.edit_message_text(
+        "✅ ЗАЯВКА ПРИНЯТА\n\n"
+
+        f"🆔 ID: {report_id}\n"
+        f"Тип: {report['report_type']}\n\n"
+
+        f"🎯 Цель:\n"
+        f"{report['target']}\n\n"
+
+        "Статус: принято к рассмотрению."
+    )
+
+    # Сообщаем заявителю
+    try:
+
+        await context.bot.send_message(
+            chat_id=report["user_id"],
+            text=(
+                "✅ Ваша заявка принята "
+                "к рассмотрению.\n\n"
+
+                f"Тип: {report['report_type']}\n"
+                f"Срок: {report['processing_time']}\n\n"
+
+                "Модератор получил вашу заявку "
+                "и предоставленные доказательства."
+            )
+        )
+
+    except Exception:
+        pass
+
+
+# =========================================================
+# АДМИН — ОТКЛОНИТЬ ЗАЯВКУ
+# =========================================================
+
+async def admin_reject(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    query = update.callback_query
+
+    # Проверяем администратора
+    if query.from_user.id != ADMIN_CHAT_ID:
+
+        await query.answer(
+            "⛔ У вас нет доступа.",
+            show_alert=True
+        )
+
+        return
+
+    await query.answer("Заявка отклонена.")
+
+    report_id = query.data.split(":", 1)[1]
+
+    reports = context.application.bot_data.get(
+        "reports",
+        {}
+    )
+
+    report = reports.get(report_id)
+
+    if not report:
+
+        await query.edit_message_text(
+            "⚠️ Заявка не найдена.\n\n"
+            "Возможно, бот был перезапущен."
+        )
+
+        return
+
+    report["status"] = "rejected"
+
+    await query.edit_message_text(
+        "❌ ЗАЯВКА ОТКЛОНЕНА\n\n"
+
+        f"🆔 ID: {report_id}\n"
+        f"Тип: {report['report_type']}\n\n"
+
+        f"🎯 Цель:\n"
+        f"{report['target']}\n\n"
+
+        "Статус: отклонено."
+    )
+
+    # Сообщаем заявителю
+    try:
+
+        await context.bot.send_message(
+            chat_id=report["user_id"],
+            text=(
+                "❌ Ваша заявка была "
+                "отклонена модератором.\n\n"
+
+                "Если вы считаете, что это произошло "
+                "по ошибке, обратитесь к администратору."
+            )
+        )
+
+    except Exception:
+        pass
+
+
+# =========================================================
 # PRE-CHECKOUT
-# =========================
+# =========================================================
 
 async def precheckout(
     update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
+    context: ContextTypes.DEFAULT_TYPE
 ):
 
     query = update.pre_checkout_query
@@ -692,7 +756,7 @@ async def precheckout(
 
         await query.answer(
             ok=False,
-            error_message="Неизвестный заказ.",
+            error_message="Неизвестный заказ."
         )
 
         return
@@ -701,7 +765,7 @@ async def precheckout(
 
         await query.answer(
             ok=False,
-            error_message="Неверная сумма.",
+            error_message="Неверная сумма."
         )
 
         return
@@ -709,13 +773,13 @@ async def precheckout(
     await query.answer(ok=True)
 
 
-# =========================
+# =========================================================
 # УСПЕШНАЯ ОПЛАТА
-# =========================
+# =========================================================
 
 async def successful_payment(
     update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
+    context: ContextTypes.DEFAULT_TYPE
 ):
 
     payment = update.message.successful_payment
@@ -725,10 +789,18 @@ async def successful_payment(
         expected_price = 25
         processing_time = "примерно за 1 час"
 
-    else:
+    elif payment.invoice_payload == "vip_50":
 
         expected_price = 50
         processing_time = "примерно за 10–20 минут"
+
+    else:
+
+        await update.message.reply_text(
+            "⚠️ Неизвестный платёж."
+        )
+
+        return
 
     if payment.total_amount != expected_price:
 
@@ -740,7 +812,7 @@ async def successful_payment(
 
     await create_report(
         update,
-        context,
+        context
     )
 
     await update.message.reply_text(
@@ -748,23 +820,22 @@ async def successful_payment(
 
         f"Оплата {expected_price} ⭐ подтверждена.\n"
 
-        f"Мы оповестим вас об обработке "
-        f"{processing_time}."
+        f"Обработка: {processing_time}."
     )
 
     context.user_data.clear()
 
 
-# =========================
-# ЗАПУСК
-# =========================
+# =========================================================
+# ЗАПУСК БОТА
+# =========================================================
 
 def main():
 
     if not TOKEN:
 
         raise RuntimeError(
-            "BOT_TOKEN не найден"
+            "BOT_TOKEN не найден."
         )
 
     app = (
@@ -778,41 +849,68 @@ def main():
     app.add_handler(
         CommandHandler(
             "start",
-            start,
+            start
         )
     )
 
-    # Кнопки
+    # -----------------------------------------------------
+    # АДМИНСКИЕ КНОПКИ
+    # -----------------------------------------------------
+
     app.add_handler(
         CallbackQueryHandler(
-            button_handler,
-            pattern=(
-                "^(report|vip|admin|back|free|"
-                "vip_25|vip_50|accept:.*|reject:.*)$"
-            ),
+            admin_accept,
+            pattern=r"^ADMIN_ACCEPT:"
         )
     )
 
-    # Успешная оплата
+    app.add_handler(
+        CallbackQueryHandler(
+            admin_reject,
+            pattern=r"^ADMIN_REJECT:"
+        )
+    )
+
+    # -----------------------------------------------------
+    # ОСТАЛЬНЫЕ КНОПКИ
+    # -----------------------------------------------------
+
+    app.add_handler(
+        CallbackQueryHandler(
+            user_buttons,
+            pattern=r"^(report|vip|admin|back|free|vip_25|vip_50)$"
+        )
+    )
+
+    # -----------------------------------------------------
+    # УСПЕШНАЯ ОПЛАТА
+    # -----------------------------------------------------
+
     app.add_handler(
         MessageHandler(
             filters.SUCCESSFUL_PAYMENT,
-            successful_payment,
+            successful_payment
         )
     )
 
-    # Обычные сообщения
+    # -----------------------------------------------------
+    # ОБЫЧНЫЕ СООБЩЕНИЯ
+    # -----------------------------------------------------
+
     app.add_handler(
         MessageHandler(
             filters.ALL,
-            message_handler,
+            message_handler
         )
     )
 
-    # Проверка оплаты
+    # -----------------------------------------------------
+    # PRE-CHECKOUT
+    # -----------------------------------------------------
+
     app.add_handler(
         PreCheckoutQueryHandler(
-            precheckout,
+            precheckout
         )
     )
 
